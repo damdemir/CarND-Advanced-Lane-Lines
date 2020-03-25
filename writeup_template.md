@@ -24,9 +24,11 @@ The goals / steps of this project are the following:
 [image3]: ./camera_cal/camera_cal_results3.PNG "Undistorted Camera Calibration Images"
 [image4]: ./camera_cal/camera_cal_results4.PNG "Undistorted Camera Calibration Images"
 [image5]: ./test_images/test2.jpg "Original Image"
-[image6]: ./test_images/test2_res.PNG "Undistorted Image"
-[image7]: ./test_images/test2_res_fit.PNG "Color & Gradient Thresholding"
-[image8]: ./test_images/test2_res_fit_search_around.PNG "Fitting Polynomial and Searching around the fitted polynomial"
+[image6]: ./test_images/test2_res.png "Undistorted Image"
+[image7]: ./test_images/test2_res_fit.png "Color & Gradient Thresholding"
+[image8]: ./test_images/test2_res_fit_search_around.png "Fitting Polynomial and Searching around the fitted polynomial"
+[image9]: ./test_images/test2_res_org.png "Back to the Origianl Image with lane lines"
+[video1]: ./project_video_output.mp4 "Original Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
 
@@ -79,21 +81,21 @@ I used a combination of color and gradient thresholds to generate a binary image
 ![alt text][image7]
 
 
-#### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
+#### 4. I identified lane-line pixels and fit their positions with a polynomial and then I converted them from pixels to meters.
 
 Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
 
 ![alt text][image8]
 
-#### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+#### 5. I followed the steps in the lecture and found the curvature and lateral distance to the lane center.
 
 I did this in lines 273 through 293 in my code in `P2.py`
 
-#### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
+#### 6. The example image result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+Here is the original image with the lane line findings via following each step in pipeline.
 
-![alt text][image6]
+![alt text][image9]
 
 ---
 
@@ -101,12 +103,10 @@ I implemented this step in lines # through # in my code in `yet_another_file.py`
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](./project_video_output.mp4)
 
 ---
 
 ### Discussion
 
-#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
-
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail in the image frames to process whole pipeline. I am debugging further.
