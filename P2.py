@@ -26,13 +26,13 @@ def cal_warped(image,mtx,dist):
     M = cv2.getPerspectiveTransform(src, dst)
     inv_M = cv2.getPerspectiveTransform(dst, src)    
     warped = cv2.warpPerspective(im_undist, M, img_size)
-    """
+    
     f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10,5))
     f.subplots_adjust(hspace = .2, wspace=.05)
     ax1.imshow(img) #original image
     ax2.imshow(im_undist) #undistorted image
     ax3.imshow(warped) # warped image
-    """
+    
     return warped, M, inv_M  #this will return straight view image, perspective Mtx and inverse Mtx
 
 def pipeline(warped, s_tresh, mag_thresh):
@@ -45,24 +45,20 @@ def pipeline(warped, s_tresh, mag_thresh):
     sxbinary_mag[(scaled_sobel >= mag_thresh[0]) & (scaled_sobel <= mag_thresh[1])] = 1
     
     hls = cv2.cvtColor(warped,cv2.COLOR_RGB2HLS)
-    #h_channel = hls[:,:,0]
-    #l_channel = hls[:,:,1]
-    s_channel = hls[:,:,2]
+    s_channel = hls[:,:,2]    
     
-    
-    #s_thresh_max = 255
     s_binary = np.zeros_like(s_channel)
     s_binary[(s_channel >= s_thresh[0]) & (s_channel <= s_thresh[1])] = 1
 
     combined_binary = np.zeros_like(sxbinary_mag)
     combined_binary[(s_binary == 1) | (sxbinary_mag == 1)] = 1
-    """
+   
     f, (ax1, ax2,ax3) = plt.subplots(1, 3, figsize=(10,5))
     f.subplots_adjust(hspace = .2, wspace=.05)
     ax1.imshow(warped)
     ax2.imshow(gray, cmap='gray')
     ax3.imshow(combined_binary, cmap='gray')   
-    """
+    
     return combined_binary
 
 def find_lane_pixels(binary_warped):
@@ -94,28 +90,25 @@ def find_lane_pixels(binary_warped):
     leftx_current = leftx_base
     rightx_current = rightx_base
 
-    # Create empty lists to receive left and right lane pixel indices
     left_lane_inds = []
     right_lane_inds = []
 
-    # Step through the windows one by one
     for window in range(nwindows):
         # Identify window boundaries in x and y (and right and left)
         win_y_low = binary_warped.shape[0] - (window+1)*window_height
         win_y_high = binary_warped.shape[0] - window*window_height
-        ### TO-DO: Find the four below boundaries of the window ###
-        win_xleft_low = leftx_current - margin  # Update this
-        win_xleft_high = leftx_current + margin  # Update this
-        win_xright_low = rightx_current - margin  # Update this
-        win_xright_high = rightx_current + margin  # Update this
+        
+        win_xleft_low = leftx_current - margin  
+        win_xleft_high = leftx_current + margin  
+        win_xright_low = rightx_current - margin 
+        win_xright_high = rightx_current + margin 
         
         # Draw the windows on the visualization image
         cv2.rectangle(out_img,(win_xleft_low,win_y_low),
         (win_xleft_high,win_y_high),(0,255,0), 2) 
         cv2.rectangle(out_img,(win_xright_low,win_y_low),
         (win_xright_high,win_y_high),(0,255,0), 2) 
-        
-        ### TO-DO: Identify the nonzero pixels in x and y within the window ###
+
         good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & 
         (nonzerox >= win_xleft_low) &  (nonzerox < win_xleft_high)).nonzero()[0]
         good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & 
@@ -125,8 +118,6 @@ def find_lane_pixels(binary_warped):
         left_lane_inds.append(good_left_inds)
         right_lane_inds.append(good_right_inds)
         
-        ### TO-DO: If you found > minpix pixels, recenter next window ###
-        ### (`right` or `leftx_current`) on their mean position ###
         if len(good_left_inds) > minpix:
             leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
         if len(good_right_inds) > minpix:        
@@ -175,17 +166,15 @@ def fit_polynomial(combined_binary):
     out_img[righty, rightx] = [0, 0, 255]
 
     # Plots the left and right polynomials on the lane lines
-    #plt.plot(left_fitx, ploty, color='yellow')
-    #plt.plot(right_fitx, ploty, color='yellow')
+    plt.plot(left_fitx, ploty, color='yellow')
+    plt.plot(right_fitx, ploty, color='yellow')
     return out_img, left_fit, right_fit, left_lane_inds, right_lane_inds
 
 def fit_poly(img_shape, leftx, lefty, rightx, righty):
-     ### TO-DO: Fit a second order polynomial to each with np.polyfit() ###
     left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
     # Generate x and y values for plotting
     ploty = np.linspace(0, img_shape[0]-1, img_shape[0])
-    ### TO-DO: Calc both polynomials using ploty, left_fit and right_fit ###
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
     
@@ -202,10 +191,6 @@ def search_around_poly(binary_warped, left_fit, right_fit):
     nonzeroy = np.array(nonzero[0])
     nonzerox = np.array(nonzero[1])
     
-    ### TO-DO: Set the area of search based on activated x-values ###
-    ### within the +/- margin of our polynomial function ###
-    ### Hint: consider the window areas for the similarly named variables ###
-    ### in the previous quiz, but change the windows to our new search area ###
     left_lane_inds = ((nonzerox > (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy + 
                     left_fit[2] - margin)) & (nonzerox < (left_fit[0]*(nonzeroy**2) + 
                     left_fit[1]*nonzeroy + left_fit[2] + margin)))
@@ -246,12 +231,12 @@ def search_around_poly(binary_warped, left_fit, right_fit):
     cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
     result = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
     
-    #plt.plot(left_fitx, ploty, color='yellow')
-    #plt.plot(right_fitx, ploty, color='yellow')
+    plt.plot(left_fitx, ploty, color='yellow')
+    plt.plot(right_fitx, ploty, color='yellow')
     
-    #f, (ax1) = plt.subplots(1, figsize=(10,5))
-    #f.subplots_adjust(hspace = .2, wspace=.05)
-    #ax1.imshow(result) #search around poly image    
+    f, (ax1) = plt.subplots(1, figsize=(10,5))
+    f.subplots_adjust(hspace = .2, wspace=.05)
+    ax1.imshow(result) #search around poly image    
     # Plot the polynomial lines onto the image
 
     left_fit = np.polyfit(ploty, left_fitx, 2)
@@ -274,12 +259,9 @@ def measure_curvature_real(combined_binary, left_fit_cr, right_fit_cr, ploty):
     # Define conversions in x and y from pixels space to meters
     ym_per_pix = 30/720 # meters per pixel in y dimension
     xm_per_pix = 3.7/700 # meters per pixel in x dimension
-    h = combined_binary.shape[0]
-    # Define y-value where we want radius of curvature
-    # We'll choose the maximum y-value, corresponding to the bottom of the image
-    y_eval = np.max(ploty)
+    h = combined_binary.shape[0]    
+    y_eval = np.max(ploty)    
     
-    ##### TO-DO: Implement the calculation of R_curve (radius of curvature) #####
     left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5)/(np.absolute(2*left_fit_cr[0]))  ## Implement the calculation of the left line here
     right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5)/(np.absolute(2*right_fit_cr[0]))  ## Implement the calculation of the right line here
     
@@ -324,7 +306,7 @@ def draw_lane_real(img, combined_binary, l_fit, r_fit, Minv):
 def add_data_real(img, curverad, center_dist):
     img_w_data = np.copy(img)
     font = cv2.FONT_HERSHEY_DUPLEX
-    text = 'Radius of curvature= ' + '{:04.2f}'.format(curverad) + 'm'
+    text = 'Radius of curvature = ' + '{:04.2f}'.format(curverad) + 'm'
     cv2.putText(img_w_data, text, (40,70), font, 1.5, (200,255,155), 2, cv2.LINE_AA)
     direction = ''
     if center_dist > 0:
@@ -332,7 +314,7 @@ def add_data_real(img, curverad, center_dist):
     elif center_dist < 0:
         direction = 'left'
     abs_center_dist = abs(center_dist)
-    text = 'Vehicle is: ' + '{:04.3f}'.format(abs_center_dist) + 'm ' + direction +' of the center'
+    text = 'Vehicle is ' + '{:04.3f}'.format(abs_center_dist) + 'm ' + direction +' of the center'
     cv2.putText(img_w_data, text, (40,120), font, 1.5, (200,255,155), 2, cv2.LINE_AA)
     return img_w_data
 
@@ -365,14 +347,14 @@ for fname in images:
         dst = np.float32([[offset, offset],[img_size[0]-offset, offset],[img_size[0]-offset, img_size[1]-offset],[offset, img_size[1]-offset]])
         M = cv2.getPerspectiveTransform(src, dst)
         warped = cv2.warpPerspective(undist, M, img_size)
-        """
+        
         #Visualization of Camera Calibration
         f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10,5))
         f.subplots_adjust(hspace = .2, wspace=.05)
         ax1.imshow(img) #original image
         ax2.imshow(undist) #undistorted image
         ax3.imshow(warped) # warped image
-        """
+        
 
 test_imgs = glob.glob('test_images/test*.jpg')  
 #for test_im in test_imgs:
@@ -384,7 +366,7 @@ mag_thresh = (30,100)
 combined_binary = pipeline(warped,s_thresh,mag_thresh)
 
 out_img, left_fit, right_fit, left_lane_inds, right_lane_inds = fit_polynomial(combined_binary)
-result, left_fitx, right_fitx, ploty, left_lane_inds, right_lane_inds = search_around_poly(combined_binary,left_fit,right_fit)
+result, left_fit, right_fit, ploty, left_lane_inds, right_lane_inds = search_around_poly(combined_binary,left_fit,right_fit)
 
 left_curverad_pix, right_curverad_pix = measure_curvature_pixels(left_fit, right_fit, ploty)
 print(left_curverad_pix, right_curverad_pix)
@@ -393,194 +375,34 @@ print(left_curverad_real, 'm', right_curverad_real, 'm', center_dist, 'm')
 
 
 test_im_lane, ploty = draw_lane_real(test_im, combined_binary, left_fit, right_fit, invM)
-#plt.imshow(test_im_lane)
+plt.imshow(test_im_lane)
 
 test_im_data = add_data_real(test_im_lane, (left_curverad_real+right_curverad_real)/2, center_dist)
-#plt.imshow(test_im_data)
+plt.imshow(test_im_data)
 
-####################################################################################################
-class Line():
-    def __init__(self):
-        # was the line detected in the last iteration?
-        self.detected = False  
-        # x values of the last n fits of the line
-        self.recent_xfitted = [] 
-        #average x values of the fitted line over the last n iterations
-        self.bestx = None     
-        #polynomial coefficients averaged over the last n iterations
-        self.best_fit = None  
-        #polynomial coefficients for the most recent fit
-        self.current_fit = []  
-        #radius of curvature of the line in some units
-        self.radius_of_curvature = None 
-        #distance in meters of vehicle center from the line
-        self.line_base_pos = None 
-        #difference in fit coefficients between last and new fits
-        self.diffs = np.array([0,0,0], dtype='float') 
-        #number of detected pixels
-        self.px_count = None
-    def add_fit(self, fit, inds):
-        # add a found fit to the line, up to n
-        if fit is not None:
-            if self.best_fit is not None:
-                # if we have a best fit, see how this new fit compares
-                self.diffs = abs(fit-self.best_fit)
-            if (self.diffs[0] > 0.001 or \
-               self.diffs[1] > 1.0 or \
-               self.diffs[2] > 100.) and \
-               len(self.current_fit) > 0:
-                # bad fit! abort! abort! ... well, unless there are no fits in the current_fit queue, then we'll take it
-                self.detected = False
-            else:
-                self.detected = True
-                self.px_count = np.count_nonzero(inds)
-                self.current_fit.append(fit)
-                if len(self.current_fit) > 5:
-                    # throw out old fits, keep newest n
-                    self.current_fit = self.current_fit[len(self.current_fit)-5:]
-                self.best_fit = np.average(self.current_fit, axis=0)
-        # or remove one from the history, if not found
-        else:
-            self.detected = False
-            if len(self.current_fit) > 0:
-                # throw out oldest fit
-                self.current_fit = self.current_fit[:len(self.current_fit)-1]
-            if len(self.current_fit) > 0:
-                # if there are still any fits in the queue, best_fit is their average
-                self.best_fit = np.average(self.current_fit, axis=0)
-
-def process_image(img):
-    new_img = np.copy(img)
+def process_image(test_im):
     warped, M, invM = cal_warped(test_im, mtx,dist)
     s_thresh = (170,255)
     mag_thresh = (30,100)
-    img_bin = pipeline(warped,s_thresh,mag_thresh)
-        
-    # if both left and right lines were detected last frame, use polyfit_using_prev_fit, otherwise use sliding window
-    if not l_line.detected or not r_line.detected:
-        out_img, l_fit, r_fit, l_lane_inds, r_lane_inds = fit_polynomial(img_bin) 
-    else:
-        result, l_fit, r_fit, ploty, l_lane_inds, r_lane_inds = search_around_poly(img_bin, l_line.best_fit, r_line.best_fit)
-        
-    # invalidate both fits if the difference in their x-intercepts isn't around 350 px (+/- 100 px)
-    if l_fit is not None and r_fit is not None:
-        # calculate x-intercept (bottom of image, x=image_height) for fits
-        h = img.shape[0]
-        l_fit_x_int = l_fit[0]*h**2 + l_fit[1]*h + l_fit[2]
-        r_fit_x_int = r_fit[0]*h**2 + r_fit[1]*h + r_fit[2]
-        x_int_diff = abs(r_fit_x_int-l_fit_x_int)
-        if abs(350 - x_int_diff) > 100:
-            l_fit = None
-            r_fit = None
-            
-    l_line.add_fit(l_fit, l_lane_inds)
-    r_line.add_fit(r_fit, r_lane_inds)
+    combined_binary = pipeline(warped,s_thresh,mag_thresh)
     
-    # draw the current best fit if it exists
-    if l_line.best_fit is not None and r_line.best_fit is not None:
-        img_out1, ploty = draw_lane_real(new_img, img_bin, l_line.best_fit, r_line.best_fit, invM)
-        rad_l, rad_r, d_center = measure_curvature_real(img_bin, l_line.best_fit, r_line.best_fit, ploty)#,l_lane_inds, r_lane_inds)
-        img_out = add_data_real(img_out1, (rad_l+rad_r)/2, d_center)
-    else:
-        img_out = new_img
+    out_img, left_fit, right_fit, left_lane_inds, right_lane_inds = fit_polynomial(combined_binary)
+    result, left_fit, right_fit, ploty, left_lane_inds, right_lane_inds = search_around_poly(combined_binary,left_fit,right_fit)
     
-    diagnostic_output = False
-    if diagnostic_output:
-        # put together multi-view output
-        diag_img = np.zeros((720,1280,3), dtype=np.uint8)
-        
-        # original output (top left)
-        diag_img[0:360,0:640,:] = cv2.resize(img_out,(640,360))
-        
-        # binary overhead view (top right)
-        img_bin = np.dstack((img_bin*255, img_bin*255, img_bin*255))
-        resized_img_bin = cv2.resize(img_bin,(640,360))
-        diag_img[0:360,640:1280, :] = resized_img_bin
-        
-        # overhead with all fits added (bottom right)
-        img_bin_fit = np.copy(img_bin)
-        for i, fit in enumerate(l_line.current_fit):
-            img_bin_fit = plot_fit_onto_img(img_bin_fit, fit, (20*i+100,0,20*i+100))
-        for i, fit in enumerate(r_line.current_fit):
-            img_bin_fit = plot_fit_onto_img(img_bin_fit, fit, (0,20*i+100,20*i+100))
-        img_bin_fit = plot_fit_onto_img(img_bin_fit, l_line.best_fit, (255,255,0))
-        img_bin_fit = plot_fit_onto_img(img_bin_fit, r_line.best_fit, (255,255,0))
-        diag_img[360:720,640:1280,:] = cv2.resize(img_bin_fit,(640,360))
-        
-        # diagnostic data (bottom left)
-        color_ok = (200,255,155)
-        color_bad = (255,155,155)
-        font = cv2.FONT_HERSHEY_DUPLEX
-        if l_fit is not None:
-            text = 'This fit L: ' + ' {:0.6f}'.format(l_fit[0]) + \
-                                    ' {:0.6f}'.format(l_fit[1]) + \
-                                    ' {:0.6f}'.format(l_fit[2])
-        else:
-            text = 'This fit L: None'
-        cv2.putText(diag_img, text, (40,380), font, .5, color_ok, 1, cv2.LINE_AA)
-        if r_fit is not None:
-            text = 'This fit R: ' + ' {:0.6f}'.format(r_fit[0]) + \
-                                    ' {:0.6f}'.format(r_fit[1]) + \
-                                    ' {:0.6f}'.format(r_fit[2])
-        else:
-            text = 'This fit R: None'
-        cv2.putText(diag_img, text, (40,400), font, .5, color_ok, 1, cv2.LINE_AA)
-        text = 'Best fit L: ' + ' {:0.6f}'.format(l_line.best_fit[0]) + \
-                                ' {:0.6f}'.format(l_line.best_fit[1]) + \
-                                ' {:0.6f}'.format(l_line.best_fit[2])
-        cv2.putText(diag_img, text, (40,440), font, .5, color_ok, 1, cv2.LINE_AA)
-        text = 'Best fit R: ' + ' {:0.6f}'.format(r_line.best_fit[0]) + \
-                                ' {:0.6f}'.format(r_line.best_fit[1]) + \
-                                ' {:0.6f}'.format(r_line.best_fit[2])
-        cv2.putText(diag_img, text, (40,460), font, .5, color_ok, 1, cv2.LINE_AA)
-        text = 'Diffs L: ' + ' {:0.6f}'.format(l_line.diffs[0]) + \
-                             ' {:0.6f}'.format(l_line.diffs[1]) + \
-                             ' {:0.6f}'.format(l_line.diffs[2])
-        if l_line.diffs[0] > 0.001 or \
-           l_line.diffs[1] > 1.0 or \
-           l_line.diffs[2] > 100.:
-            diffs_color = color_bad
-        else:
-            diffs_color = color_ok
-        cv2.putText(diag_img, text, (40,500), font, .5, diffs_color, 1, cv2.LINE_AA)
-        text = 'Diffs R: ' + ' {:0.6f}'.format(r_line.diffs[0]) + \
-                             ' {:0.6f}'.format(r_line.diffs[1]) + \
-                             ' {:0.6f}'.format(r_line.diffs[2])
-        if r_line.diffs[0] > 0.001 or \
-           r_line.diffs[1] > 1.0 or \
-           r_line.diffs[2] > 100.:
-            diffs_color = color_bad
-        else:
-            diffs_color = color_ok
-        cv2.putText(diag_img, text, (40,520), font, .5, diffs_color, 1, cv2.LINE_AA)
-        text = 'Good fit count L:' + str(len(l_line.current_fit))
-        cv2.putText(diag_img, text, (40,560), font, .5, color_ok, 1, cv2.LINE_AA)
-        text = 'Good fit count R:' + str(len(r_line.current_fit))
-        cv2.putText(diag_img, text, (40,580), font, .5, color_ok, 1, cv2.LINE_AA)
-        
-        img_out = diag_img
-    return img_out
+    left_curverad_pix, right_curverad_pix = measure_curvature_pixels(left_fit, right_fit, ploty)
+    #print(left_curverad_pix, right_curverad_pix)
+    left_curverad_real, right_curverad_real, center_dist = measure_curvature_real(combined_binary, left_fit, right_fit, ploty)
+    #print(left_curverad_real, 'm', right_curverad_real, 'm', center_dist, 'm')
+    
+    
+    test_im_lane, ploty = draw_lane_real(test_im, combined_binary, left_fit, right_fit, invM)
+    #plt.imshow(test_im_lane)
+    
+    test_im_data = add_data_real(test_im_lane, (left_curverad_real+right_curverad_real)/2, center_dist)
+    #plt.imshow(test_im_data)
+    
+    return test_im_data
 
-def plot_fit_onto_img(img, fit, plot_color):
-    if fit is None:
-        return img
-    new_img = np.copy(img)
-    h = new_img.shape[0]
-    ploty = np.linspace(0, h-1, h)
-    plotx = fit[0]*ploty**2 + fit[1]*ploty + fit[2]
-    pts = np.array([np.transpose(np.vstack([plotx, ploty]))])
-    cv2.polylines(new_img, np.int32([pts]), isClosed=False, color=plot_color, thickness=8)
-    return new_img
-
-l_line = Line()
-r_line = Line()
-"""
-#my_clip.write_gif('test.gif', fps=12)
-video_output1 = 'project_video_output.mp4'
-video_input1 = VideoFileClip('project_video.mp4')#.subclip(22,26)
-processed_video = video_input1.fl_image(process_image)
-#%time processed_video.write_videofile(video_output1, audio=False)
-"""
 from moviepy.editor import VideoFileClip
 #from IPython.display import HTML
 
