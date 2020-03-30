@@ -24,7 +24,7 @@ The goals / steps of this project are the following:
 [image6]: ./output_images/warped_test2.jpg "Undistorted Image"
 [image7]: ./test_images/test2_res_fit.png "Color & Gradient Thresholding"
 [image8]: ./output_images/around_test2.jpg "Fitting Polynomial and Searching around the fitted polynomial"
-[image9]: ./test_images/test2_res_org.png "Back to the Origianl Image with lane lines"
+[image9]: ./output_images/test2.jpg "Back to the Origianl Image with lane lines"
 [image10]: ./output_images/window_test2.jpg "Sliding Window Search"
 [video1]: ./project_video_output.mp4 "Original Video"
 
