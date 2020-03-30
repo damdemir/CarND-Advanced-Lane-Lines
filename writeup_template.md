@@ -82,9 +82,12 @@ Then I did some other stuff and fit my lane lines with a 2nd order polynomial ki
 ![alt text][image10]
 ![alt text][image8]
 
+
 #### 5.I fit their positions with a polynomial. Then, I converted them from pixels to meters. I followed the steps in the lecture and found the curvature and lateral distance to the lane center.
 
-I did this in lines 273 through 293 in my code in `P2.py`
+I did this via `fit_poly()` method  in lines 210 through 218 in my code in `P2.py`
+
+![alt_text][image7] 
 
 #### 6. The example image result plotted back down onto the road such that the lane area is identified clearly.
 
