@@ -8,13 +8,14 @@ import numpy as np
 import cv2
 import glob
 import matplotlib.pyplot as plt
+import os
 
 #Camera Calibration and perpective transformation will be done by cal_warped function
 def cal_warped(image,mtx,dist):
     img = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
     img_size = (img.shape[1], img.shape[0])
     im_undist = cv2.undistort(img, mtx, dist, None, mtx)
-    
+    """
     src = np.float32([(600,450),
                   (700,450), 
                   (300,650), 
@@ -23,19 +24,41 @@ def cal_warped(image,mtx,dist):
                   (img_size[0]-350,0),
                   (550,img_size[1]),
                   (img_size[0]-350,img_size[1])])
+    """
+    offsetXNear = 60
+    offsetXFar  = 400
+    
+    offsetYNear = 90
+    offsetYFar  = 320
+    
+    centerX = int(img.shape[1]/2)
+    centerY = int(img.shape[0]/2)
+    
+    src = np.float32(
+           [[centerX - offsetXNear, centerY + offsetYNear],
+            [centerX + offsetXNear, centerY + offsetYNear],
+            [centerX + offsetXFar , centerY + offsetYFar],
+            [centerX - offsetXFar , centerY + offsetYFar]]) 
+    
+    dst = np.float32(
+           [[centerX - offsetXFar, 0],
+            [centerX + offsetXFar, 0],
+            [centerX + offsetXFar, img.shape[0]],
+            [centerX - offsetXFar, img.shape[0]],
+            ])
     M = cv2.getPerspectiveTransform(src, dst)
     inv_M = cv2.getPerspectiveTransform(dst, src)    
     warped = cv2.warpPerspective(im_undist, M, img_size)
-    
+    """
     f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10,5))
     f.subplots_adjust(hspace = .2, wspace=.05)
     ax1.imshow(img) #original image
     ax2.imshow(im_undist) #undistorted image
     ax3.imshow(warped) # warped image
-    
+    """
     return warped, M, inv_M  #this will return straight view image, perspective Mtx and inverse Mtx
 
-def pipeline(warped, s_tresh, mag_thresh):
+def pipeline(warped, s_tresh, l_thresh, mag_thresh, dir_thresh):
     gray = cv2.cvtColor(warped, cv2.COLOR_RGB2GRAY)
     sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0)
     sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1)
@@ -44,21 +67,35 @@ def pipeline(warped, s_tresh, mag_thresh):
     sxbinary_mag = np.zeros_like(scaled_sobel)
     sxbinary_mag[(scaled_sobel >= mag_thresh[0]) & (scaled_sobel <= mag_thresh[1])] = 1
     
+    dir_sobel = np.arctan2(np.absolute(sobely), np.absolute(sobelx))
+    scaled_sobel_dir = np.uint8(255*dir_sobel/np.max(dir_sobel))
+    sxbinary_dir = np.zeros_like(scaled_sobel_dir)
+    sxbinary_dir[(scaled_sobel_dir >= dir_thresh[0]) & (scaled_sobel_dir <= dir_thresh[1])] = 1
+    
     hls = cv2.cvtColor(warped,cv2.COLOR_RGB2HLS)
-    s_channel = hls[:,:,2]    
+    l_channel = hls[:,:,1]
+    s_channel = hls[:,:,2]
+
+    l_binary =  np.zeros_like(l_channel)
+    l_binary[(l_channel >= l_thresh[0]) & (l_channel <=l_thresh[1])] = 1    
     
     s_binary = np.zeros_like(s_channel)
     s_binary[(s_channel >= s_thresh[0]) & (s_channel <= s_thresh[1])] = 1
 
     combined_binary = np.zeros_like(sxbinary_mag)
-    combined_binary[(s_binary == 1) | (sxbinary_mag == 1)] = 1
-   
-    f, (ax1, ax2,ax3) = plt.subplots(1, 3, figsize=(10,5))
-    f.subplots_adjust(hspace = .2, wspace=.05)
-    ax1.imshow(warped)
-    ax2.imshow(gray, cmap='gray')
-    ax3.imshow(combined_binary, cmap='gray')   
+    combined_binary[(s_binary == 1) | (sxbinary_mag == 1) | (sxbinary_dir == 1)] = 1
     
+    f, (ax1, ax2,ax3, ax4) = plt.subplots(1, 4, figsize=(20,5))
+    f.subplots_adjust(hspace = .2, wspace=.05)
+    ax1.imshow(s_binary, cmap='gray')
+    ax1.title.set_text('s_binary')
+    ax2.imshow(l_binary, cmap='gray')
+    ax2.title.set_text('l_binary')
+    ax3.imshow(sxbinary_mag, cmap='gray')   
+    ax3.title.set_text('sx_binary_mag')
+    ax4.imshow(sxbinary_dir, cmap='gray')  
+    ax4.title.set_text('sx_binary_dir')
+
     return combined_binary
 
 def find_lane_pixels(binary_warped):
@@ -166,8 +203,8 @@ def fit_polynomial(combined_binary):
     out_img[righty, rightx] = [0, 0, 255]
 
     # Plots the left and right polynomials on the lane lines
-    plt.plot(left_fitx, ploty, color='yellow')
-    plt.plot(right_fitx, ploty, color='yellow')
+    #plt.plot(left_fitx, ploty, color='yellow')
+    #plt.plot(right_fitx, ploty, color='yellow')
     return out_img, left_fit, right_fit, left_lane_inds, right_lane_inds
 
 def fit_poly(img_shape, leftx, lefty, rightx, righty):
@@ -230,7 +267,7 @@ def search_around_poly(binary_warped, left_fit, right_fit):
     cv2.fillPoly(window_img, np.int_([left_line_pts]), (0,255, 0))
     cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
     result = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
-    
+    """
     plt.plot(left_fitx, ploty, color='yellow')
     plt.plot(right_fitx, ploty, color='yellow')
     
@@ -238,7 +275,7 @@ def search_around_poly(binary_warped, left_fit, right_fit):
     f.subplots_adjust(hspace = .2, wspace=.05)
     ax1.imshow(result) #search around poly image    
     # Plot the polynomial lines onto the image
-
+    """
     left_fit = np.polyfit(ploty, left_fitx, 2)
     right_fit = np.polyfit(ploty, right_fitx, 2)
     
@@ -347,44 +384,68 @@ for fname in images:
         dst = np.float32([[offset, offset],[img_size[0]-offset, offset],[img_size[0]-offset, img_size[1]-offset],[offset, img_size[1]-offset]])
         M = cv2.getPerspectiveTransform(src, dst)
         warped = cv2.warpPerspective(undist, M, img_size)
-        
+        """
         #Visualization of Camera Calibration
         f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10,5))
         f.subplots_adjust(hspace = .2, wspace=.05)
         ax1.imshow(img) #original image
         ax2.imshow(undist) #undistorted image
         ax3.imshow(warped) # warped image
+        """
+        
         
 
-test_imgs = glob.glob('test_images/test*.jpg')  
-#for test_im in test_imgs:
-test_im = test_imgs[2]
-test_im = cv2.imread(test_im)
-warped, M, invM = cal_warped(test_im, mtx,dist)
-s_thresh = (170,255)
-mag_thresh = (30,100)
-combined_binary = pipeline(warped,s_thresh,mag_thresh)
 
-out_img, left_fit, right_fit, left_lane_inds, right_lane_inds = fit_polynomial(combined_binary)
-result, left_fit, right_fit, ploty, left_lane_inds, right_lane_inds = search_around_poly(combined_binary,left_fit,right_fit)
+test_imgs = os.listdir("test_images/")
+#print(test_imgs)
+for test_img in test_imgs:
+    #test_im = test_imgs[2]
+    test_im = cv2.imread('test_images/'+test_img)
+    warped, M, invM = cal_warped(test_im, mtx,dist)
+    s_thresh = (150,250)
+    l_thresh = (115, 140)
+    mag_thresh = (30,100)
+    dir_thresh = (np.pi/7, np.pi/3)
+    combined_binary = pipeline(warped,s_thresh,l_thresh, mag_thresh,dir_thresh)
+    
+    out_img, left_fit, right_fit, left_lane_inds, right_lane_inds = fit_polynomial(combined_binary)
+    result, left_fit, right_fit, ploty, left_lane_inds, right_lane_inds = search_around_poly(combined_binary,left_fit,right_fit)
+    
+    left_curverad_pix, right_curverad_pix = measure_curvature_pixels(left_fit, right_fit, ploty)
+    #print(left_curverad_pix, right_curverad_pix)
+    left_curverad_real, right_curverad_real, center_dist = measure_curvature_real(combined_binary, left_fit, right_fit, ploty)
+    #print(left_curverad_real, 'm', right_curverad_real, 'm', center_dist, 'm')
+    
+    
+    test_im_lane, ploty = draw_lane_real(test_im, combined_binary, left_fit, right_fit, invM)
+    #plt.imshow(test_im_lane)
+    
+    img_w_data = add_data_real(test_im_lane, (left_curverad_real+right_curverad_real)/2, center_dist)
+    #Visualization of Camera Calibration
+    f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20,10))
+    f.subplots_adjust(hspace = .2, wspace=.05)
+    ax1.imshow(test_im) #original image
+    ax2.imshow(warped) #undistorted image
+    ax3.imshow(combined_binary) # warped image
+    ax4.imshow(img_w_data) #image with data
+    
+    #plt.imshow(test_im_data)    
+    cv2.imwrite('output_images/'+test_img, cv2.cvtColor(img_w_data, cv2.COLOR_RGB2BGR))
+    cv2.imwrite('output_images/'+'warped_'+test_img, cv2.cvtColor(warped, cv2.COLOR_RGB2BGR))
+    cv2.imwrite('output_images/'+'binary_'+test_img, combined_binary)
+    cv2.imwrite('output_images/'+'window_'+test_img, cv2.cvtColor(out_img, cv2.COLOR_RGB2BGR))
+    cv2.imwrite('output_images/'+'around_'+test_img, cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
 
-left_curverad_pix, right_curverad_pix = measure_curvature_pixels(left_fit, right_fit, ploty)
-print(left_curverad_pix, right_curverad_pix)
-left_curverad_real, right_curverad_real, center_dist = measure_curvature_real(combined_binary, left_fit, right_fit, ploty)
-print(left_curverad_real, 'm', right_curverad_real, 'm', center_dist, 'm')
-
-
-test_im_lane, ploty = draw_lane_real(test_im, combined_binary, left_fit, right_fit, invM)
-plt.imshow(test_im_lane)
-
-test_im_data = add_data_real(test_im_lane, (left_curverad_real+right_curverad_real)/2, center_dist)
-plt.imshow(test_im_data)
-
+    
 def process_image(test_im):
     warped, M, invM = cal_warped(test_im, mtx,dist)
-    s_thresh = (170,255)
+    s_thresh = (150,250)
+    l_thresh = (115, 140)
     mag_thresh = (30,100)
-    combined_binary = pipeline(warped,s_thresh,mag_thresh)
+    dir_thresh = (np.pi/7, np.pi/3)
+    combined_binary = pipeline(warped,s_thresh,l_thresh, mag_thresh,dir_thresh)
+    
+    #combined_binary = pipeline(warped,s_thresh,mag_thresh)
     
     out_img, left_fit, right_fit, left_lane_inds, right_lane_inds = fit_polynomial(combined_binary)
     result, left_fit, right_fit, ploty, left_lane_inds, right_lane_inds = search_around_poly(combined_binary,left_fit,right_fit)
