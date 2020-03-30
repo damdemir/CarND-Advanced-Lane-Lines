@@ -88,7 +88,7 @@ I did this in lines 273 through 293 in my code in `P2.py`
 
 #### 6. The example image result plotted back down onto the road such that the lane area is identified clearly.
 
-Here is the original image with the lane line findings via following each step in pipeline.
+Here is the original image with the lane line findings via following each step in pipeline. Further results that include all test_images are located in output_images folder.
 
 ![alt text][image9]
 
