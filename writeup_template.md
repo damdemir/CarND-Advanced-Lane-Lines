@@ -21,10 +21,11 @@ The goals / steps of this project are the following:
 [image3]: ./camera_cal/camera_cal_results3.PNG "Undistorted Camera Calibration Images"
 [image4]: ./camera_cal/camera_cal_results4.PNG "Undistorted Camera Calibration Images"
 [image5]: ./test_images/test2.jpg "Original Image"
-[image6]: ./test_images/test2_res.png "Undistorted Image"
+[image6]: ./output_images/test2.jpg "Undistorted Image"
 [image7]: ./test_images/test2_res_fit.png "Color & Gradient Thresholding"
-[image8]: ./test_images/test2_res_fit_search_around.png "Fitting Polynomial and Searching around the fitted polynomial"
+[image8]: ./output_images/around_test2.png "Fitting Polynomial and Searching around the fitted polynomial"
 [image9]: ./test_images/test2_res_org.png "Back to the Origianl Image with lane lines"
+[image10]: ./output_images/window_test2.jpg "Sliding Window Search"
 [video1]: ./project_video_output.mp4 "Original Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
@@ -72,19 +73,16 @@ I verified that my perspective transform was working as expected by drawing the 
 
 ![alt text][image6]
 
-#### 3. Below it could be seen that, color transformation and gradient thresholded binary version with original image.
+#### 4.  Below it could be seen that, color transformation and gradient thresholded binary version with original image. I identified lane-line pixels by sliding window and search around polynom method.
 
-I used a combination of color and gradient thresholds to generate a binary image Here's an example of my output for this step.  
-![alt text][image7]
+Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this: 
+1. Lane lines with sliding window
+2. Lane lines via searching around polynom
 
-
-#### 4. I identified lane-line pixels and fit their positions with a polynomial and then I converted them from pixels to meters.
-
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
-
+![alt text][image10]
 ![alt text][image8]
 
-#### 5. I followed the steps in the lecture and found the curvature and lateral distance to the lane center.
+#### 5.I fit their positions with a polynomial. Then, I converted them from pixels to meters. I followed the steps in the lecture and found the curvature and lateral distance to the lane center.
 
 I did this in lines 273 through 293 in my code in `P2.py`
 
